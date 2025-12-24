@@ -1,0 +1,71 @@
+# =============================================================================
+# SIMPLE VERSION - Quick Test
+# =============================================================================
+# Use this for quick testing with minimal configuration
+# Uncomment and use this instead of the full main.tf if you want a simpler test
+# =============================================================================
+
+# Create Resource Group
+resource "azurerm_resource_group" "test" {
+  name     = "rg-nsg-quick-test"
+  location = "eastus"
+}
+
+# Single NSG for quick testing
+module "nsg_simple" {
+  source = "../../"
+
+  name                = "quicktest"
+  resource_group_name = azurerm_resource_group.test.name
+  location            = azurerm_resource_group.test.location
+  environment         = "dev"
+  namespace           = "test"
+
+  # Simple ingress - just HTTPS and SSH
+  ingress_rules = {
+    from_cidrs = {
+      tcp = {
+        "443" = {
+          cidrs   = ["0.0.0.0/0"]
+          to_port = 443
+        }
+        "22" = {
+          cidrs   = ["10.0.0.0/8"]
+          to_port = 22
+        }
+      }
+      udp  = {}
+      icmp = {}
+    }
+    from_nsgs = {
+      tcp = {}
+      udp = {}
+    }
+  }
+
+  egress_rules = {
+    to_cidrs = {}
+    to_nsgs  = {}
+  }
+
+  enable_any_egress      = true
+  enable_any_nsg_to_self = false
+
+  # Minimal tags
+  tags = {
+    architecture       = "native"
+    owner              = "test_team"
+    purpose            = "Quick test network security group for basic validation of module functionality and deployment."
+    terraform_resource = "true"
+    project            = "testing"
+  }
+}
+
+# Output
+output "nsg_id" {
+  value = module.nsg_simple.id
+}
+
+output "nsg_name" {
+  value = module.nsg_simple.name
+}
